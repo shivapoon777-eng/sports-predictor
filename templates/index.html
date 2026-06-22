@@ -1,0 +1,897 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sports Analytics Engine</title>
+<style>
+/* ── TOKENS ───────────────────────────────────────────── */
+:root {
+  --bg:          #0a0c10;
+  --surface:     #13161d;
+  --surface2:    #1a1e28;
+  --border:      #1e2330;
+  --border2:     #252b3b;
+  --accent:      #00e5a0;
+  --accent-dim:  #00b37a;
+  --accent-glow: rgba(0,229,160,0.18);
+  --rival:       #6366f1;
+  --rival-dim:   #4f52d4;
+  --rival-glow:  rgba(99,102,241,0.18);
+  --text:        #e2e8f0;
+  --text-mid:    #94a3b8;
+  --text-muted:  #4a5568;
+  --warn:        #f59e0b;
+  --error:       #ef4444;
+  --mono: 'JetBrains Mono','Fira Code','Cascadia Code',monospace;
+  --sans: 'Inter',system-ui,sans-serif;
+  --radius: 14px;
+}
+
+/* ── RESET ────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--sans);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+button { cursor: pointer; font-family: var(--sans); }
+select { font-family: var(--sans); }
+
+/* ── HEADER ───────────────────────────────────────────── */
+header {
+  position: sticky; top: 0; z-index: 200;
+  background: rgba(10,12,16,0.88);
+  backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 28px;
+  height: 58px;
+  display: flex; align-items: center; gap: 14px;
+}
+.logo {
+  width: 32px; height: 32px; border-radius: 8px;
+  background: var(--accent);
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--mono); font-weight: 900; font-size: 16px;
+  color: #0a0c10; flex-shrink: 0;
+  box-shadow: 0 0 16px var(--accent-glow);
+}
+header h1 { font-size: 14px; font-weight: 600; letter-spacing: 0.03em; }
+.header-tag {
+  margin-left: auto; font-size: 11px; font-family: var(--mono);
+  color: var(--text-muted); background: var(--surface);
+  border: 1px solid var(--border); border-radius: 20px;
+  padding: 3px 10px; letter-spacing: 0.05em;
+}
+
+/* ── LAYOUT ───────────────────────────────────────────── */
+.page { max-width: 900px; margin: 0 auto; padding: 36px 24px 80px; }
+
+/* ── SPORT TABS ───────────────────────────────────────── */
+.sport-tabs {
+  display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 28px;
+}
+.sport-tab {
+  background: var(--surface); border: 1px solid var(--border);
+  color: var(--text-mid); font-size: 12px; font-weight: 600;
+  padding: 7px 16px; border-radius: 20px;
+  transition: all 0.18s; letter-spacing: 0.04em;
+}
+.sport-tab:hover { border-color: var(--border2); color: var(--text); }
+.sport-tab.active {
+  background: var(--accent); border-color: var(--accent);
+  color: #0a0c10; box-shadow: 0 0 14px var(--accent-glow);
+}
+
+/* ── MATCHUP SELECTOR ─────────────────────────────────── */
+.selector-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+  margin-bottom: 28px;
+}
+.selector-grid {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr auto;
+  gap: 12px; align-items: end;
+}
+.sel-group { display: flex; flex-direction: column; gap: 6px; }
+.sel-label {
+  font-size: 10px; font-weight: 700; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--text-muted);
+}
+.sel-group select {
+  background: var(--bg); border: 1px solid var(--border2);
+  color: var(--text); padding: 10px 14px; border-radius: 10px;
+  font-size: 13px; appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2364748b' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 12px center;
+  padding-right: 32px;
+  transition: border-color 0.15s;
+}
+.sel-group select:focus { outline: none; border-color: var(--accent); }
+.vs-badge {
+  font-family: var(--mono); font-size: 11px; font-weight: 700;
+  color: var(--text-muted); background: var(--bg);
+  border: 1px solid var(--border); border-radius: 8px;
+  padding: 10px 12px; letter-spacing: 0.08em;
+  align-self: end;
+}
+.btn-simulate {
+  background: var(--accent); color: #0a0c10;
+  border: none; padding: 11px 28px; border-radius: 10px;
+  font-weight: 700; font-size: 13px; letter-spacing: 0.03em;
+  transition: background 0.15s, box-shadow 0.15s;
+  align-self: end; white-space: nowrap;
+}
+.btn-simulate:hover { background: var(--accent-dim); box-shadow: 0 0 20px var(--accent-glow); }
+.btn-simulate:disabled { opacity: 0.4; cursor: not-allowed; box-shadow: none; }
+.btn-simulate.loading { background: var(--surface2); color: var(--text-mid); }
+
+/* tennis best-of row */
+.bestof-row {
+  margin-top: 14px; display: none; gap: 8px; align-items: center;
+}
+.bestof-row.visible { display: flex; }
+.bestof-label { font-size: 11px; color: var(--text-muted); font-weight: 600; letter-spacing: 0.06em; }
+.bestof-btn {
+  background: var(--bg); border: 1px solid var(--border2);
+  color: var(--text-mid); padding: 5px 14px; border-radius: 20px;
+  font-size: 12px; font-weight: 600; transition: all 0.15s;
+}
+.bestof-btn.active { background: var(--rival); border-color: var(--rival); color: #fff; }
+
+/* ── IDLE STATE ───────────────────────────────────────── */
+#idle-state {
+  text-align: center; padding: 56px 24px; color: var(--text-muted);
+}
+#idle-state .idle-icon {
+  font-size: 40px; margin-bottom: 16px; opacity: 0.5;
+}
+#idle-state p { font-size: 14px; line-height: 1.6; }
+
+/* ── RESULTS PANEL ────────────────────────────────────── */
+#results { display: none; }
+
+/* ── WINNER CARD ──────────────────────────────────────── */
+.winner-card {
+  border-radius: var(--radius);
+  padding: 28px 32px;
+  margin-bottom: 20px;
+  display: flex; align-items: center; gap: 24px;
+  position: relative; overflow: hidden;
+  border: 1px solid transparent;
+  animation: slideIn 0.35s ease;
+}
+.winner-card.team-a-wins {
+  background: linear-gradient(135deg, rgba(0,229,160,0.10) 0%, rgba(0,229,160,0.03) 100%);
+  border-color: rgba(0,229,160,0.25);
+}
+.winner-card.team-b-wins {
+  background: linear-gradient(135deg, rgba(99,102,241,0.10) 0%, rgba(99,102,241,0.03) 100%);
+  border-color: rgba(99,102,241,0.25);
+}
+.winner-card.draw {
+  background: linear-gradient(135deg, rgba(245,158,11,0.08) 0%, rgba(245,158,11,0.02) 100%);
+  border-color: rgba(245,158,11,0.22);
+}
+.winner-glow {
+  position: absolute; right: -40px; top: -40px;
+  width: 180px; height: 180px; border-radius: 50%;
+  opacity: 0.12; filter: blur(40px);
+  pointer-events: none;
+}
+.winner-card.team-a-wins .winner-glow { background: var(--accent); }
+.winner-card.team-b-wins .winner-glow { background: var(--rival); }
+.winner-card.draw .winner-glow { background: var(--warn); }
+.winner-crown { font-size: 32px; flex-shrink: 0; }
+.winner-info { flex: 1; min-width: 0; }
+.winner-eyebrow {
+  font-size: 10px; font-weight: 700; letter-spacing: 0.12em;
+  text-transform: uppercase; color: var(--text-muted);
+  margin-bottom: 4px;
+}
+.winner-name {
+  font-size: 22px; font-weight: 800; letter-spacing: -0.02em;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.winner-card.team-a-wins .winner-name { color: var(--accent); }
+.winner-card.team-b-wins .winner-name { color: var(--rival); }
+.winner-card.draw .winner-name { color: var(--warn); }
+.winner-meta { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+.winner-prob-big {
+  font-family: var(--mono); font-size: 36px; font-weight: 900;
+  letter-spacing: -0.03em; flex-shrink: 0;
+}
+.winner-card.team-a-wins .winner-prob-big { color: var(--accent); }
+.winner-card.team-b-wins .winner-prob-big { color: var(--rival); }
+.winner-card.draw .winner-prob-big { color: var(--warn); }
+.winner-prob-label {
+  font-size: 10px; color: var(--text-muted); text-align: right;
+  font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase;
+}
+
+/* ── ARC DUEL ─────────────────────────────────────────── */
+/* The signature element: a split SVG arc where A fills from left, B from right */
+.arc-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 28px 32px;
+  margin-bottom: 20px; text-align: center;
+  animation: slideIn 0.4s ease 0.05s both;
+}
+.arc-title {
+  font-size: 10px; font-weight: 700; letter-spacing: 0.12em;
+  text-transform: uppercase; color: var(--text-muted); margin-bottom: 20px;
+}
+.arc-wrap { position: relative; display: inline-block; }
+.arc-wrap svg { display: block; }
+.arc-center-label {
+  position: absolute; top: 50%; left: 50%;
+  transform: translate(-50%, -52%);
+  text-align: center; pointer-events: none;
+}
+.arc-center-vs {
+  font-family: var(--mono); font-size: 11px; font-weight: 700;
+  color: var(--text-muted); letter-spacing: 0.1em;
+  display: block; margin-bottom: 2px;
+}
+.arc-center-total {
+  font-family: var(--mono); font-size: 22px; font-weight: 900;
+  color: var(--text); letter-spacing: -0.02em; display: block;
+}
+.arc-center-sub {
+  font-size: 10px; color: var(--text-muted); font-weight: 600;
+  letter-spacing: 0.06em; text-transform: uppercase;
+  display: block; margin-top: 2px;
+}
+.arc-legend {
+  display: flex; justify-content: center; gap: 32px; margin-top: 18px;
+}
+.arc-legend-item { display: flex; align-items: center; gap: 8px; }
+.arc-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+.arc-legend-name { font-size: 12px; color: var(--text-mid); font-weight: 500; }
+.arc-legend-pct { font-size: 12px; font-family: var(--mono); font-weight: 700; }
+
+/* ── SCORE BADGES ─────────────────────────────────────── */
+.scores-grid {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 14px; margin-bottom: 20px;
+}
+.score-badge {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 22px 24px;
+  display: flex; flex-direction: column; gap: 6px;
+  position: relative; overflow: hidden;
+  animation: slideIn 0.4s ease 0.1s both;
+  transition: border-color 0.2s;
+}
+.score-badge.is-winner { border-color: transparent; }
+.score-badge.is-winner.team-a { border-color: rgba(0,229,160,0.3); }
+.score-badge.is-winner.team-b { border-color: rgba(99,102,241,0.3); }
+.score-badge-accent {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  height: 3px; border-radius: 0 0 var(--radius) var(--radius);
+}
+.score-badge.team-a .score-badge-accent { background: var(--accent); }
+.score-badge.team-b .score-badge-accent { background: var(--rival); }
+.badge-eyebrow {
+  font-size: 10px; font-weight: 700; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--text-muted);
+}
+.badge-team-name { font-size: 14px; font-weight: 700; color: var(--text); }
+.badge-score {
+  font-family: var(--mono); font-size: 40px; font-weight: 900;
+  letter-spacing: -0.04em; line-height: 1;
+  margin: 6px 0 4px;
+}
+.score-badge.team-a .badge-score { color: var(--accent); }
+.score-badge.team-b .badge-score { color: var(--rival); }
+.badge-score-label { font-size: 11px; color: var(--text-muted); font-weight: 500; }
+.badge-odds {
+  margin-top: 10px; padding-top: 10px;
+  border-top: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.badge-odds-label { font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.08em; }
+.badge-odds-val {
+  font-family: var(--mono); font-size: 14px; font-weight: 800;
+}
+.score-badge.team-a .badge-odds-val { color: var(--accent); }
+.score-badge.team-b .badge-odds-val { color: var(--rival); }
+
+/* ── PROBABILITY BARS ─────────────────────────────────── */
+.prob-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 24px 28px;
+  margin-bottom: 20px;
+  animation: slideIn 0.4s ease 0.15s both;
+}
+.prob-card-title {
+  font-size: 10px; font-weight: 700; letter-spacing: 0.12em;
+  text-transform: uppercase; color: var(--text-muted); margin-bottom: 20px;
+}
+.prob-row { margin-bottom: 18px; }
+.prob-row:last-child { margin-bottom: 0; }
+.prob-row-header {
+  display: flex; justify-content: space-between;
+  align-items: baseline; margin-bottom: 8px;
+}
+.prob-team { font-size: 13px; font-weight: 600; color: var(--text); }
+.prob-pct {
+  font-family: var(--mono); font-size: 14px; font-weight: 800;
+}
+.prob-row.row-a .prob-pct { color: var(--accent); }
+.prob-row.row-b .prob-pct { color: var(--rival); }
+.prob-row.row-draw .prob-pct { color: var(--warn); }
+.prob-track {
+  height: 8px; background: var(--bg);
+  border-radius: 4px; overflow: hidden;
+  border: 1px solid var(--border);
+}
+.prob-fill {
+  height: 100%; border-radius: 4px; width: 0%;
+  transition: width 0.9s cubic-bezier(0.16,1,0.3,1);
+}
+.prob-row.row-a .prob-fill { background: linear-gradient(90deg, var(--accent-dim), var(--accent)); }
+.prob-row.row-b .prob-fill { background: linear-gradient(90deg, var(--rival-dim), var(--rival)); }
+.prob-row.row-draw .prob-fill { background: linear-gradient(90deg, #d97706, var(--warn)); }
+
+/* ── STATS ROW ────────────────────────────────────────── */
+.stats-row {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: 12px; margin-bottom: 20px;
+}
+.stat-chip {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 10px; padding: 16px 18px; text-align: center;
+  animation: slideIn 0.4s ease 0.2s both;
+}
+.stat-chip-val {
+  font-family: var(--mono); font-size: 20px; font-weight: 900;
+  color: var(--text); letter-spacing: -0.02em;
+  display: block; margin-bottom: 4px;
+}
+.stat-chip-label {
+  font-size: 10px; color: var(--text-muted); font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.08em;
+}
+
+/* ── META ROW ─────────────────────────────────────────── */
+.meta-row {
+  display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+  padding: 14px 18px; background: var(--surface);
+  border: 1px solid var(--border); border-radius: 10px;
+  animation: slideIn 0.4s ease 0.25s both;
+}
+.meta-chip {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 11px; color: var(--text-muted);
+}
+.meta-chip-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--accent); flex-shrink: 0;
+}
+.meta-chip code {
+  font-family: var(--mono); font-size: 11px; color: var(--text-mid);
+  background: var(--bg); padding: 2px 6px; border-radius: 4px;
+}
+
+/* ── ERROR TOAST ──────────────────────────────────────── */
+#error-toast {
+  display: none; margin-bottom: 20px;
+  background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.3);
+  border-radius: 10px; padding: 14px 18px;
+  font-size: 13px; color: #fca5a5;
+  animation: slideIn 0.25s ease;
+}
+
+/* ── ANIMATIONS ───────────────────────────────────────── */
+@keyframes slideIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes arcDraw {
+  from { stroke-dashoffset: var(--dash-total); }
+  to   { stroke-dashoffset: var(--dash-end); }
+}
+
+/* ── RESPONSIVE ───────────────────────────────────────── */
+@media (max-width: 640px) {
+  .selector-grid { grid-template-columns: 1fr 1fr; }
+  .vs-badge { display: none; }
+  .btn-simulate { grid-column: 1 / -1; width: 100%; text-align: center; }
+  .scores-grid { grid-template-columns: 1fr; }
+  .stats-row { grid-template-columns: repeat(3,1fr); }
+  .winner-prob-big { font-size: 28px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .prob-fill { transition: none; }
+  * { animation-duration: 0.01ms !important; }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">Σ</div>
+  <h1>Sports Analytics Engine</h1>
+  <span class="header-tag">Monte Carlo · 1000 sims</span>
+</header>
+
+<div class="page">
+
+  <!-- Sport tabs -->
+  <div class="sport-tabs" id="sport-tabs">
+    <button class="sport-tab" data-sport="nfl">🏈 NFL</button>
+    <button class="sport-tab" data-sport="mlb">⚾ MLB</button>
+    <button class="sport-tab" data-sport="nba">🏀 NBA</button>
+    <button class="sport-tab active" data-sport="soccer">⚽ Soccer</button>
+    <button class="sport-tab" data-sport="cricket">🏏 Cricket</button>
+    <button class="sport-tab" data-sport="tennis">🎾 Tennis</button>
+  </div>
+
+  <!-- Matchup selector -->
+  <div class="selector-card">
+    <div class="selector-grid">
+      <div class="sel-group">
+        <span class="sel-label">Team A</span>
+        <select id="team-a"></select>
+      </div>
+      <div class="vs-badge">VS</div>
+      <div class="sel-group">
+        <span class="sel-label">Team B</span>
+        <select id="team-b"></select>
+      </div>
+      <button class="btn-simulate" id="sim-btn" onclick="runSim()">Simulate →</button>
+    </div>
+    <div class="bestof-row" id="bestof-row">
+      <span class="bestof-label">FORMAT</span>
+      <button class="bestof-btn active" data-bo="5">Best of 5</button>
+      <button class="bestof-btn" data-bo="3">Best of 3</button>
+    </div>
+  </div>
+
+  <!-- Error -->
+  <div id="error-toast"></div>
+
+  <!-- Idle state -->
+  <div id="idle-state">
+    <div class="idle-icon">📊</div>
+    <p>Select two teams above and hit <strong>Simulate</strong><br>to run 1,000 Monte Carlo iterations.</p>
+  </div>
+
+  <!-- Results -->
+  <div id="results">
+
+    <!-- Winner card -->
+    <div class="winner-card" id="winner-card">
+      <div class="winner-glow"></div>
+      <div class="winner-crown" id="winner-crown"></div>
+      <div class="winner-info">
+        <div class="winner-eyebrow" id="winner-eyebrow">Predicted Winner</div>
+        <div class="winner-name" id="winner-name"></div>
+        <div class="winner-meta" id="winner-meta"></div>
+      </div>
+      <div>
+        <div class="winner-prob-big" id="winner-prob-big"></div>
+        <div class="winner-prob-label">WIN PROB</div>
+      </div>
+    </div>
+
+    <!-- Split arc -->
+    <div class="arc-card">
+      <div class="arc-title">Win Probability Distribution</div>
+      <div class="arc-wrap">
+        <svg id="arc-svg" width="220" height="130" viewBox="0 0 220 130">
+          <!-- Track -->
+          <path id="arc-track" fill="none" stroke="#1e2330" stroke-width="14" stroke-linecap="round"/>
+          <!-- Team A fill (left → right) -->
+          <path id="arc-a" fill="none" stroke="#00e5a0" stroke-width="14" stroke-linecap="round"/>
+          <!-- Team B fill (right → left) -->
+          <path id="arc-b" fill="none" stroke="#6366f1" stroke-width="14" stroke-linecap="round"/>
+          <!-- Draw fill (center) -->
+          <path id="arc-draw" fill="none" stroke="#f59e0b" stroke-width="14" stroke-linecap="round"/>
+        </svg>
+        <div class="arc-center-label">
+          <span class="arc-center-vs">TOTAL</span>
+          <span class="arc-center-total" id="arc-total">—</span>
+          <span class="arc-center-sub" id="arc-sub">pts</span>
+        </div>
+      </div>
+      <div class="arc-legend" id="arc-legend">
+        <div class="arc-legend-item">
+          <div class="arc-dot" style="background:var(--accent)"></div>
+          <span class="arc-legend-name" id="leg-a-name">—</span>
+          <span class="arc-legend-pct" style="color:var(--accent)" id="leg-a-pct">—</span>
+        </div>
+        <div class="arc-legend-item" id="leg-draw-item">
+          <div class="arc-dot" style="background:var(--warn)"></div>
+          <span class="arc-legend-name">Draw</span>
+          <span class="arc-legend-pct" style="color:var(--warn)" id="leg-draw-pct">—</span>
+        </div>
+        <div class="arc-legend-item">
+          <div class="arc-dot" style="background:var(--rival)"></div>
+          <span class="arc-legend-name" id="leg-b-name">—</span>
+          <span class="arc-legend-pct" style="color:var(--rival)" id="leg-b-pct">—</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Score badges -->
+    <div class="scores-grid">
+      <div class="score-badge team-a" id="badge-a">
+        <div class="score-badge-accent"></div>
+        <div class="badge-eyebrow">Team A</div>
+        <div class="badge-team-name" id="badge-a-name">—</div>
+        <div class="badge-score" id="badge-a-score">—</div>
+        <div class="badge-score-label" id="badge-a-score-label">Projected Score</div>
+        <div class="badge-odds">
+          <span class="badge-odds-label">Decimal Odds</span>
+          <span class="badge-odds-val" id="badge-a-odds">—</span>
+        </div>
+      </div>
+      <div class="score-badge team-b" id="badge-b">
+        <div class="score-badge-accent"></div>
+        <div class="badge-eyebrow">Team B</div>
+        <div class="badge-team-name" id="badge-b-name">—</div>
+        <div class="badge-score" id="badge-b-score">—</div>
+        <div class="badge-score-label" id="badge-b-score-label">Projected Score</div>
+        <div class="badge-odds">
+          <span class="badge-odds-label">Decimal Odds</span>
+          <span class="badge-odds-val" id="badge-b-odds">—</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Probability bars -->
+    <div class="prob-card">
+      <div class="prob-card-title">Outcome Probability Breakdown</div>
+      <div class="prob-row row-a">
+        <div class="prob-row-header">
+          <span class="prob-team" id="prob-a-name">—</span>
+          <span class="prob-pct" id="prob-a-pct">—</span>
+        </div>
+        <div class="prob-track"><div class="prob-fill" id="prob-a-fill"></div></div>
+      </div>
+      <div class="prob-row row-draw" id="prob-draw-row">
+        <div class="prob-row-header">
+          <span class="prob-team">Draw</span>
+          <span class="prob-pct" id="prob-draw-pct">—</span>
+        </div>
+        <div class="prob-track"><div class="prob-fill" id="prob-draw-fill"></div></div>
+      </div>
+      <div class="prob-row row-b" style="margin-bottom:0">
+        <div class="prob-row-header">
+          <span class="prob-team" id="prob-b-name">—</span>
+          <span class="prob-pct" id="prob-b-pct">—</span>
+        </div>
+        <div class="prob-track"><div class="prob-fill" id="prob-b-fill"></div></div>
+      </div>
+    </div>
+
+    <!-- Stats chips -->
+    <div class="stats-row" id="stats-row"></div>
+
+    <!-- Meta -->
+    <div class="meta-row" id="meta-row"></div>
+  </div>
+
+</div><!-- /page -->
+
+<script>
+// ─── ROSTER DATA ──────────────────────────────────────────
+const ROSTERS = {
+  nfl:     ["Kansas City Chiefs","Philadelphia Eagles","San Francisco 49ers","Baltimore Ravens","Dallas Cowboys","Miami Dolphins","Cincinnati Bengals","Detroit Lions","Green Bay Packers","Houston Texans"],
+  mlb:     ["Los Angeles Dodgers","Atlanta Braves","New York Yankees","Houston Astros","Baltimore Orioles","Tampa Bay Rays","Seattle Mariners","Texas Rangers","Minnesota Twins","Chicago Cubs"],
+  nba:     ["Boston Celtics","Oklahoma City Thunder","Denver Nuggets","Minnesota Timberwolves","Cleveland Cavaliers","New York Knicks","Indiana Pacers","Phoenix Suns","Golden State Warriors","Los Angeles Lakers"],
+  soccer:  ["Argentina","France","England","Brazil","Spain","Germany","Portugal","Netherlands","Morocco","USA"],
+  cricket: ["India","Australia","England","South Africa","West Indies","Pakistan","New Zealand","Sri Lanka","Bangladesh","Afghanistan"],
+  tennis:  ["Novak Djokovic","Carlos Alcaraz","Jannik Sinner","Daniil Medvedev","Alexander Zverev","Andrey Rublev","Hubert Hurkacz","Taylor Fritz","Stefanos Tsitsipas","Casper Ruud"],
+};
+
+// Score field names per sport
+const SCORE_FIELDS = {
+  nfl:     { a: "proj_score_a", b: "proj_score_b", label: "Proj Pts", totalLabel: "pts" },
+  mlb:     { a: "proj_runs_a",  b: "proj_runs_b",  label: "Proj Runs", totalLabel: "runs" },
+  nba:     { a: "proj_pts_a",   b: "proj_pts_b",   label: "Proj Pts", totalLabel: "pts" },
+  soccer:  { a: "proj_goals_a", b: "proj_goals_b", label: "Proj Goals", totalLabel: "goals" },
+  cricket: { a: "proj_score_a", b: "proj_score_b", label: "Proj Runs", totalLabel: "runs" },
+  tennis:  { a: "proj_sets_a",  b: "proj_sets_b",  label: "Proj Sets", totalLabel: "sets" },
+};
+
+const TOTAL_FIELD = {
+  nfl: "proj_total", mlb: "proj_total", nba: "proj_total",
+  soccer: "proj_total", cricket: "proj_combined", tennis: null,
+};
+
+// ─── STATE ────────────────────────────────────────────────
+let activeSport = "soccer";
+let bestOf = 5;
+let lastResult = null;
+
+// ─── INIT ─────────────────────────────────────────────────
+document.addEventListener("DOMContentLoaded", () => {
+  setupTabs();
+  setupBestOf();
+  populateSelects("soccer");
+});
+
+function setupTabs() {
+  document.querySelectorAll(".sport-tab").forEach(btn => {
+    btn.addEventListener("click", () => {
+      document.querySelectorAll(".sport-tab").forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      activeSport = btn.dataset.sport;
+      populateSelects(activeSport);
+      hideResults();
+      // Show/hide tennis best-of
+      document.getElementById("bestof-row").classList.toggle("visible", activeSport === "tennis");
+    });
+  });
+}
+
+function setupBestOf() {
+  document.querySelectorAll(".bestof-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      document.querySelectorAll(".bestof-btn").forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      bestOf = parseInt(btn.dataset.bo);
+    });
+  });
+}
+
+function populateSelects(sport) {
+  const teams = ROSTERS[sport] || [];
+  const selA = document.getElementById("team-a");
+  const selB = document.getElementById("team-b");
+  selA.innerHTML = teams.map((t,i) => `<option value="${t}"${i===0?" selected":""}>${t}</option>`).join("");
+  selB.innerHTML = teams.map((t,i) => `<option value="${t}"${i===1?" selected":""}>${t}</option>`).join("");
+}
+
+// ─── SIMULATION ───────────────────────────────────────────
+async function runSim() {
+  const teamA = document.getElementById("team-a").value;
+  const teamB = document.getElementById("team-b").value;
+  if (teamA === teamB) { showError("Select two different teams."); return; }
+
+  const btn = document.getElementById("sim-btn");
+  btn.disabled = true; btn.textContent = "Simulating…"; btn.classList.add("loading");
+  hideError(); hideResults();
+
+  const body = { sport: activeSport, team_a: teamA, team_b: teamB };
+  if (activeSport === "tennis") body.best_of = bestOf;
+
+  try {
+    const res  = await fetch("/predict", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    const data = await res.json();
+    if (!res.ok) { showError(data.error || "Simulation failed."); return; }
+    lastResult = data;
+    renderResults(data);
+  } catch(e) {
+    showError("Could not reach the server. Is Flask running?");
+  } finally {
+    btn.disabled = false; btn.textContent = "Simulate →"; btn.classList.remove("loading");
+  }
+}
+
+// ─── RENDER ───────────────────────────────────────────────
+function renderResults(data) {
+  const { meta, teams, simulation, implied_odds } = data;
+  const sport  = (meta.sport || activeSport).toLowerCase();
+  const sf     = SCORE_FIELDS[sport] || SCORE_FIELDS.nba;
+  const tf     = TOTAL_FIELD[sport];
+
+  const pA     = simulation.win_prob_a || 0;
+  const pB     = simulation.win_prob_b || 0;
+  const pD     = simulation.draw_prob  || 0;
+  const scoreA = simulation[sf.a];
+  const scoreB = simulation[sf.b];
+  const total  = tf ? simulation[tf] : null;
+
+  const pctA   = pct(pA), pctB = pct(pB), pctD = pct(pD);
+
+  // ── Winner Card ──
+  const wCard = document.getElementById("winner-card");
+  const isDraw = pD > pA && pD > pB;
+  let winnerClass, winnerName, winnerProb, winnerCrown, winnerMeta;
+
+  if (isDraw) {
+    winnerClass = "draw"; winnerName = "Even Match"; winnerProb = pctD;
+    winnerCrown = "⚖️"; winnerMeta = `Draw probability leads at ${pctD}`;
+  } else if (pA >= pB) {
+    winnerClass = "team-a-wins"; winnerName = teams.a; winnerProb = pctA;
+    winnerCrown = "🏆"; winnerMeta = `Favoured over ${teams.b}`;
+  } else {
+    winnerClass = "team-b-wins"; winnerName = teams.b; winnerProb = pctB;
+    winnerCrown = "🏆"; winnerMeta = `Favoured over ${teams.a}`;
+  }
+
+  wCard.className = `winner-card ${winnerClass}`;
+  document.getElementById("winner-crown").textContent   = winnerCrown;
+  document.getElementById("winner-name").textContent    = winnerName;
+  document.getElementById("winner-meta").textContent    = winnerMeta;
+  document.getElementById("winner-prob-big").textContent = winnerProb;
+
+  // ── Arc ──
+  drawArc(pA, pB, pD);
+  document.getElementById("leg-a-name").textContent  = shortName(teams.a);
+  document.getElementById("leg-b-name").textContent  = shortName(teams.b);
+  document.getElementById("leg-a-pct").textContent   = pctA;
+  document.getElementById("leg-b-pct").textContent   = pctB;
+  document.getElementById("leg-draw-pct").textContent = pctD;
+  document.getElementById("leg-draw-item").style.display = pD > 0 ? "flex" : "none";
+
+  if (total !== null) {
+    document.getElementById("arc-total").textContent = total;
+    document.getElementById("arc-sub").textContent   = sf.totalLabel;
+  } else {
+    document.getElementById("arc-total").textContent = "—";
+    document.getElementById("arc-sub").textContent   = "";
+  }
+
+  // ── Score Badges ──
+  const badgeAWin = pA > pB;
+  const badgeBWin = pB > pA;
+  document.getElementById("badge-a").classList.toggle("is-winner", badgeAWin);
+  document.getElementById("badge-b").classList.toggle("is-winner", badgeBWin);
+  document.getElementById("badge-a-name").textContent         = teams.a;
+  document.getElementById("badge-b-name").textContent         = teams.b;
+  document.getElementById("badge-a-score").textContent        = scoreA !== undefined ? scoreA : "—";
+  document.getElementById("badge-b-score").textContent        = scoreB !== undefined ? scoreB : "—";
+  document.getElementById("badge-a-score-label").textContent  = sf.label;
+  document.getElementById("badge-b-score-label").textContent  = sf.label;
+  document.getElementById("badge-a-odds").textContent         = implied_odds.team_a_decimal ?? "—";
+  document.getElementById("badge-b-odds").textContent         = implied_odds.team_b_decimal ?? "—";
+
+  // ── Probability Bars ──
+  document.getElementById("prob-a-name").textContent  = teams.a;
+  document.getElementById("prob-b-name").textContent  = teams.b;
+  document.getElementById("prob-a-pct").textContent   = pctA;
+  document.getElementById("prob-b-pct").textContent   = pctB;
+  document.getElementById("prob-draw-pct").textContent = pctD;
+  document.getElementById("prob-draw-row").style.display = pD > 0 ? "block" : "none";
+
+  // Animate bars after a frame
+  requestAnimationFrame(() => {
+    setTimeout(() => {
+      document.getElementById("prob-a-fill").style.width    = pctA;
+      document.getElementById("prob-b-fill").style.width    = pctB;
+      document.getElementById("prob-draw-fill").style.width = pctD;
+    }, 60);
+  });
+
+  // ── Stats Chips ──
+  const chips = buildStatChips(simulation, sport, total, sf);
+  document.getElementById("stats-row").innerHTML = chips
+    .map(c => `<div class="stat-chip"><span class="stat-chip-val">${c.val}</span><span class="stat-chip-label">${c.label}</span></div>`)
+    .join("");
+
+  // ── Meta ──
+  const ts = new Date(meta.generated).toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"});
+  document.getElementById("meta-row").innerHTML = `
+    <div class="meta-chip"><div class="meta-chip-dot"></div><span>Sport</span><code>${meta.sport}</code></div>
+    <div class="meta-chip"><div class="meta-chip-dot"></div><span>Simulations</span><code>${meta.simulations.toLocaleString()}</code></div>
+    <div class="meta-chip"><div class="meta-chip-dot"></div><span>Generated</span><code>${ts}</code></div>
+  `;
+
+  document.getElementById("idle-state").style.display = "none";
+  document.getElementById("results").style.display    = "block";
+}
+
+// ─── ARC DRAWING ──────────────────────────────────────────
+function drawArc(pA, pB, pD) {
+  // Arc: semicircle from left → right, cx=110, cy=115, r=88
+  const cx = 110, cy = 115, r = 88;
+  const startAngle = Math.PI;   // left
+  const endAngle   = 0;         // right (going counter-clockwise = upward arc)
+
+  function ptOnArc(angle) {
+    return [cx + r * Math.cos(angle), cy + r * Math.sin(angle)];
+  }
+  const [sx, sy] = ptOnArc(startAngle); // left tip
+  const [ex, ey] = ptOnArc(endAngle);   // right tip
+
+  const trackD = `M ${sx} ${sy} A ${r} ${r} 0 0 1 ${ex} ${ey}`;
+  document.getElementById("arc-track").setAttribute("d", trackD);
+
+  // Total arc length for a semicircle ≈ π * r
+  const arcLen = Math.PI * r;
+
+  // Team A fills from left (startAngle) proportional to pA
+  const aEnd = startAngle - (pA * Math.PI);
+  const [aex, aey] = ptOnArc(aEnd);
+  const aD = `M ${sx} ${sy} A ${r} ${r} 0 0 1 ${aex} ${aey}`;
+
+  // Team B fills from right (endAngle) proportional to pB
+  const bEnd = endAngle + (pB * Math.PI);
+  const [bsx, bsy] = ptOnArc(bEnd);
+  const bD = `M ${ex} ${ey} A ${r} ${r} 0 0 0 ${bsx} ${bsy}`;
+
+  // Draw fill (middle remainder)
+  const dStart = startAngle - pA * Math.PI;
+  const dEnd   = endAngle   + pB * Math.PI;
+  let drawD = "";
+  if (pD > 0 && dEnd < dStart) {
+    const [ds1x, ds1y] = ptOnArc(dStart);
+    const [de1x, de1y] = ptOnArc(dEnd);
+    // large arc flag: check if span > π
+    const span = dStart - dEnd;
+    const largeArc = span > Math.PI ? 1 : 0;
+    drawD = `M ${ds1x} ${ds1y} A ${r} ${r} 0 ${largeArc} 0 ${de1x} ${de1y}`;
+  }
+
+  // Animate using stroke-dasharray/offset technique
+  function animatePath(el, d, len) {
+    el.setAttribute("d", d);
+    el.style.strokeDasharray  = `${arcLen} ${arcLen}`;
+    el.style.strokeDashoffset = arcLen;
+    el.getBoundingClientRect(); // force reflow
+    el.style.transition = "stroke-dashoffset 0.9s cubic-bezier(0.16,1,0.3,1)";
+    el.style.strokeDashoffset = arcLen - len;
+  }
+
+  animatePath(document.getElementById("arc-a"), aD, pA * arcLen);
+  animatePath(document.getElementById("arc-b"), bD, pB * arcLen);
+  const arcDraw = document.getElementById("arc-draw");
+  if (pD > 0 && drawD) {
+    animatePath(arcDraw, drawD, pD * arcLen);
+    arcDraw.style.display = "";
+  } else {
+    arcDraw.style.display = "none";
+    arcDraw.setAttribute("d", "");
+  }
+}
+
+// ─── STAT CHIPS ───────────────────────────────────────────
+function buildStatChips(sim, sport, total, sf) {
+  const chips = [];
+  if (total !== null && total !== undefined) chips.push({ val: total, label: `Total ${sf.totalLabel}` });
+
+  const drawPct = pct(sim.draw_prob || 0);
+  if ((sim.draw_prob || 0) > 0) chips.push({ val: drawPct, label: "Draw Prob" });
+
+  // Margin
+  const sA = sim[sf.a], sB = sim[sf.b];
+  if (sA !== undefined && sB !== undefined) {
+    chips.push({ val: Math.abs(sA - sB).toFixed(1), label: "Proj Margin" });
+  }
+
+  // Sport-specific extras
+  if (sport === "nfl")    chips.push({ val: pct(sim.win_prob_a), label: "A Win %"  });
+  if (sport === "soccer") chips.push({ val: drawPct, label: "Draw %" });
+  if (sport === "tennis") chips.push({ val: sim.best_of || 5, label: "Best Of" });
+
+  // Trim to 3
+  return chips.slice(0, 3);
+}
+
+// ─── UTILS ────────────────────────────────────────────────
+function pct(n) { return (n * 100).toFixed(1) + "%"; }
+
+function shortName(name) {
+  // "Los Angeles Lakers" → "Lakers", single-word names stay
+  const parts = name.split(" ");
+  return parts.length > 1 ? parts[parts.length - 1] : name;
+}
+
+function showError(msg) {
+  const el = document.getElementById("error-toast");
+  el.textContent = "⚠ " + msg;
+  el.style.display = "block";
+}
+function hideError() { document.getElementById("error-toast").style.display = "none"; }
+function hideResults() {
+  document.getElementById("results").style.display = "none";
+  document.getElementById("idle-state").style.display = "block";
+}
+</script>
+</body>
+</html>
