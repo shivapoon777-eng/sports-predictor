@@ -473,4 +473,7 @@ HOME_HTML = """<!DOCTYPE html>
 <header>
   <div class="logo-mark">Σ</div>
   <h1>Sports Analyt
+  @app.route('/')
+def home():
+    return render_template('index.html')
 """
