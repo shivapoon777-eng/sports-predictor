@@ -4,13 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sports Analytics Terminal</title>
-    <link rel="preconnect" href="https://googleapis.com">
-    <link rel="preconnect" href="https://gstatic.com" crossorigin>
-    <link href="https://googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
-    <script src="https://jsdelivr.net"></script>
+    <script src="https://unpkg.com"></script>
     <style>
-        body { font-family: 'Inter', sans-serif; background-color: #0b0f1a; }
-        .mono { font-family: 'JetBrains Mono', monospace; }
+        body { font-family: system-ui, -apple-system, sans-serif; background-color: #0b0f1a; }
+        .mono { font-family: monospace; }
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: #0b0f1a; }
         ::-webkit-scrollbar-thumb { background: #151c2e; border-radius: 3px; }
@@ -62,14 +59,14 @@
                     </div>
                     <div class="space-y-4">
                         <div>
-                            <label for="teamA" class="block text-[11px] font-bold uppercase tracking-wider text-blue-400 mb-2">Team / Player A (Home)</label>
+                            <label for="teamA" class="block text-[11px] font-bold uppercase tracking-wider text-blue-400 mb-2">Team A / Home</label>
                             <input type="text" id="teamA" placeholder="e.g. Boston Celtics" required class="w-full bg-[#172033] border border-slate-700 rounded-lg px-3 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 font-medium transition">
                         </div>
                         <div class="flex items-center justify-center py-1">
                             <span class="text-[10px] bg-slate-800 border border-slate-700 text-slate-400 px-2 py-0.5 rounded-full uppercase tracking-widest font-bold">VS</span>
                         </div>
                         <div>
-                            <label for="teamB" class="block text-[11px] font-bold uppercase tracking-wider text-amber-500 mb-2">Team / Player B (Away)</label>
+                            <label for="teamB" class="block text-[11px] font-bold uppercase tracking-wider text-amber-500 mb-2">Team B / Away</label>
                             <input type="text" id="teamB" placeholder="e.g. Los Angeles Lakers" required class="w-full bg-[#172033] border border-slate-700 rounded-lg px-3 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 font-medium transition">
                         </div>
                     </div>
@@ -105,18 +102,23 @@
                 </div>
                 <div id="activeState" class="hidden opacity-0 flex flex-col justify-between w-full h-full transition-opacity duration-300 flex-grow space-y-6">
                     <div class="flex items-center justify-between border-b border-slate-800 pb-3">
-                        <span id="resMetaSport" class="text-[10px] bg-slate-900 border border-slate-800 px-2.5 py-1 rounded text-slate-400 tracking-widest font-bold uppercase mono">NBA SIMULATION</span>
+                        <span id="resMetaSport" class="text-[10px] bg-slate-900 border border-slate-800 px-2.5 py-1 rounded text-slate-400 tracking-widest font-bold uppercase mono">SIMULATION PROFILE</span>
                         <span class="text-[10px] text-slate-500 tracking-wider font-semibold uppercase flex items-center gap-1.5">
-                            <span class="w-1.5 h-1.5 bg-emerald-500 rounded-full"></span> 1,000 MATRIX ITERATIONS COMPLETE
+                            <span class="w-1.5 h-1.5 bg-emerald-500 rounded-full"></span> 1,000 ITERATIONS COMPLETE
                         </span>
                     </div>
                     <div class="grid grid-cols-7 items-center gap-4 py-4 relative">
                         <div class="col-span-3 text-left">
                             <p class="text-[10px] font-bold text-blue-400 uppercase tracking-widest mb-1">TEAM A / HOME</p>
-                            <h3 id="resNameA" class="text-lg font-bold text-white tracking-tight truncate">Boston Celtics</h3>
+                            <h3 id="resNameA" class="text-lg font-bold text-white tracking-tight truncate">-</h3>
                             <div class="mt-3 flex items-baseline gap-1.5">
-                                <span id="resPtsA" class="text-3xl font-bold tracking-tight text-white font-medium tracking-tighter mono">121.4</span>
-                                <span class="text-[10px] text-slate-500 uppercase tracking-wider font-medium">Proj Pts</span>
+                                <span id="resPtsA" class="text-3xl font-bold tracking-tight text-white font-medium tracking-tighter mono">0.0</span>
+                                <span class="text-[10px] text-slate-500 uppercase tracking-wider font-medium">Proj Value</span>
+                            </div>
+                        </div>
+                        <div class="col-span-1 flex flex-col items-center justify-center relative h-24">
+                            <div class="w-16 h-16 rounded-full border-4 border-blue-500 flex items-center justify-center">
+                                <span id="resGaugePct" class="text-xs font-bold text-white mono">50%</span>
                             </div>
                         </div>
                         
