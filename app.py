@@ -17,7 +17,8 @@ TEAMS = {
     "NFL": {"Kansas City Chiefs": [24.8, 20.2], "San Francisco 49ers": [26.1, 19.8], "Philadelphia Eagles": [23.9, 21.4], "Buffalo Bills": [25.4, 22.1]},
     "MLB": {"New York Yankees": [4.8, 4.1], "Los Angeles Dodgers": [5.2, 4.3], "Houston Astros": [4.6, 4.2], "Atlanta Braves": [4.9, 3.9]},
     "SOCCER": {"Argentina": [2.1, 0.8], "France": [2.3, 0.9], "Brazil": [1.9, 1.0], "England": [2.0, 0.7], "Iran": [1.6, 1.1], "Belgium": [1.8, 1.2]},
-    "CRICKET": {"India":, "Australia":, "England":, "Pakistan":}
+    "CRICKET": {"India": [280.5], "Australia": [275.2], "England": [270.4], "Pakistan": [260.1]}
+
 }
 
 def simulate_game(sport, stats_a, stats_b):
