@@ -6,30 +6,31 @@ app = Flask(__name__)
 DB_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "predictions.db"))
 
 def init_db():
-    with sqlite3.connect(DB_PATH) as conn:
-        conn.execute('''CREATE TABLE IF NOT EXISTS predictions (
-            id INTEGER PRIMARY KEY AUTOINCREMENT, timestamp TEXT, sport TEXT,
-            team_a TEXT, team_b TEXT, win_prob_a REAL, win_prob_b REAL, winner TEXT)''')
+    try:
+        with sqlite3.connect(DB_PATH) as conn:
+            conn.execute('''CREATE TABLE IF NOT EXISTS predictions (
+                id INTEGER PRIMARY KEY AUTOINCREMENT, timestamp TEXT, sport TEXT,
+                team_a TEXT, team_b TEXT, win_prob_a REAL, win_prob_b REAL, winner TEXT)''')
+    except Exception: pass
 init_db()
 
 TEAMS = {
-    "NBA": {"Los Angeles Lakers": [114.2, 115.1], "Boston Celtics": [120.6, 110.2], "Golden State Warriors": [116.4, 115.8], "Miami Heat": [110.1, 108.4]},
-    "NFL": {"Kansas City Chiefs": [24.8, 20.2], "San Francisco 49ers": [26.1, 19.8], "Philadelphia Eagles": [23.9, 21.4], "Buffalo Bills": [25.4, 22.1]},
-    "MLB": {"New York Yankees": [4.8, 4.1], "Los Angeles Dodgers": [5.2, 4.3], "Houston Astros": [4.6, 4.2], "Atlanta Braves": [4.9, 3.9]},
-    "SOCCER": {"Argentina": [2.1, 0.8], "France": [2.3, 0.9], "Brazil": [1.9, 1.0], "England": [2.0, 0.7], "Iran": [1.6, 1.1], "Belgium": [1.8, 1.2]},
-    "CRICKET": {"India": [280.5], "Australia": [275.2], "England": [270.4], "Pakistan": [260.1]}
-
+    "NBA": {"Los Angeles Lakers": 114.2, "Boston Celtics": 120.6, "Golden State Warriors": 116.4, "Miami Heat": 110.1},
+    "NFL": {"Kansas City Chiefs": 24.8, "San Francisco 49ers": 26.1, "Philadelphia Eagles": 23.9, "Buffalo Bills": 25.4},
+    "MLB": {"New York Yankees": 4.8, "Los Angeles Dodgers": 5.2, "Houston Astros": 4.6, "Atlanta Braves": 4.9},
+    "SOCCER": {"Argentina": 2.1, "France": 2.3, "Brazil": 1.9, "England": 2.0, "Iran": 1.6, "Belgium": 1.8},
+    "CRICKET": {"India": 280.5, "Australia": 275.2, "England": 270.4, "Pakistan": 260.1}
 }
 
-def simulate_game(sport, stats_a, stats_b):
+def simulate_game(sport, base_a, base_b):
     wins_a = 0
     sims = 1000
     for _ in range(sims):
-        score_a = random.gauss(stats_a[0], 5 if sport in ["NFL","MLB","SOCCER"] else 12)
-        score_b = random.gauss(stats_b[0], 5 if sport in ["NFL","MLB","SOCCER"] else 12)
+        score_a = random.gauss(base_a, 5 if sport in ["NFL","MLB","SOCCER"] else 12)
+        score_b = random.gauss(base_b, 5 if sport in ["NFL","MLB","SOCCER"] else 12)
         if score_a > score_b: wins_a += 1
     prob_a = wins_a / sims
-    return round(prob_a, 3), round(1 - prob_a, 3), round(stats_a[0], 1), round(stats_b[0], 1)
+    return round(prob_a, 3), round(1 - prob_a, 3), round(base_a, 1), round(base_b, 1)
 
 @app.route('/')
 def home():
@@ -41,7 +42,7 @@ def predict():
     sport = data.get("sport", "").upper()
     ta, tb = data.get("team_a"), data.get("team_b")
     if sport not in TEAMS or ta not in TEAMS[sport] or tb not in TEAMS[sport]:
-        return jsonify({"error": "Invalid sport or team name selected"}), 400
+        return jsonify({"error": "Invalid sport or team selected"}), 400
     pa, pb, sa, sb = simulate_game(sport, TEAMS[sport][ta], TEAMS[sport][tb])
     winner = ta if pa > pb else tb
     try:
@@ -63,4 +64,3 @@ def history():
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 5000))
     app.run(host='0.0.0.0', port=port)
-  
