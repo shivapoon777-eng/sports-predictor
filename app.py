@@ -2,7 +2,7 @@ import os, random, sqlite3
 from datetime import datetime
 from flask import Flask, render_template, request, jsonify
 
-app = Flask(__name__, static_folder='static', template_folder='templates')
+app = Flask(__name__, static_folder='static', template_folder='template')
 
 DB_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "predictions.db"))
 
