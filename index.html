@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sports Analytics Terminal</title>
+    <script src="https://unpkg.com"></script>
+    <style>
+        body { font-family: system-ui, -apple-system, sans-serif; background-color: #0b0f1a; }
+        .mono { font-family: monospace; }
+    </style>
+</head>
+<body class="text-slate-200 min-h-screen flex flex-col antialiased">
+    <div class="bg-[#05070d] border-b border-slate-800 text-xs text-slate-400 py-2 text-center uppercase tracking-wider font-medium">
+        📊 LOCAL CLIENT-SIDE MONTE CARLO ENGINE: ACTIVE
+    </div>
+    <header class="border-b border-slate-800 bg-[#0b0f1a]/80 backdrop-blur sticky top-0 z-50">
+        <div class="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="w-8 h-8 rounded bg-blue-600 flex items-center justify-center font-bold text-white tracking-tighter text-sm">Σ</div>
+                <div>
+                    <h1 class="text-sm font-bold tracking-tight text-white uppercase">Sports Analytics</h1>
+                    <p class="text-[10px] text-slate-500 tracking-wider font-medium uppercase">Standalone Prediction Engine</p>
+                </div>
+            </div>
+            <div class="text-xs px-2.5 py-1 rounded bg-slate-900 border border-slate-800 text-slate-400 font-medium">v2.0-serverless</div>
+        </div>
+    </header>
+    <main class="flex-grow max-w-6xl mx-auto w-full px-4 py-8 grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <section class="lg:col-span-1 flex flex-col gap-6">
+            <div class="bg-[#121826] border border-slate-800/80 rounded-xl p-6 shadow-xl">
+                <div class="flex items-center gap-2 mb-4 border-b border-slate-800 pb-3">
+                    <span class="text-blue-500 text-lg">⚙️</span>
+                    <h2 class="text-xs font-bold uppercase tracking-wider text-slate-400">Simulation Control</h2>
+                </div>
+                <form id="simForm" class="space-y-5">
+                    <div>
+                        <label for="sport" class="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-2">Select Discipline</label>
+                        <select id="sport" class="w-full bg-[#172033] border border-slate-700 rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:border-blue-500 font-medium transition">
+                            <option value="NBA">🏀 NBA Basketball</option>
+                            <option value="NFL">🏈 NFL Football</option>
+                            <option value="MLB">⚾ MLB Baseball</option>
+                            <option value="SOCCER">⚽ Global Soccer</option>
+                            <option value="CRICKET">🏏 International Cricket</option>
+                        </select>
+                    </div>
+                    <div class="space-y-4">
+                        <div>
+                            <label for="teamA" class="block text-[11px] font-bold uppercase tracking-wider text-blue-400 mb-2">Team A / Home</label>
+                            <input type="text" id="teamA" placeholder="e.g. Boston Celtics" required class="w-full bg-[#172033] border border-slate-700 rounded-lg px-3 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 font-medium transition">
+                        </div>
+                        <div class="flex items-center justify-center py-1">
+                            <span class="text-[10px] bg-slate-800 border border-slate-700 text-slate-400 px-2 py-0.5 rounded-full uppercase tracking-widest font-bold">VS</span>
+                        </div>
+                        <div>
+                            <label for="teamB" class="block text-[11px] font-bold uppercase tracking-wider text-amber-500 mb-2">Team B / Away</label>
+                            <input type="text" id="teamB" placeholder="e.g. Los Angeles Lakers" required class="w-full bg-[#172033] border border-slate-700 rounded-lg px-3 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 font-medium transition">
+                        </div>
+                    </div>
+                    <button type="submit" id="btnSim" class="w-full bg-blue-600 hover:bg-blue-500 active:scale-[0.98] text-white font-semibold text-xs tracking-wider uppercase py-3.5 px-4 rounded-lg mt-4 transition cursor-pointer flex items-center justify-center gap-2">
+                        <span>Execute 1,000 Simulations</span>
+                    </button>
+                </form>
+            </div>
+            <div class="bg-[#121826]/40 border border-slate-800 rounded-xl p-5 text-xs text-slate-400 space-y-3">
+                <div class="font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">📋 Name Directory Rules</div>
+                <ul class="space-y-1 text-[11px] list-disc pl-4 text-slate-500">
+                    <li><strong>NBA:</strong> Boston Celtics, Los Angeles Lakers, Golden State Warriors, Miami Heat</li>
+                    <li><strong>SOCCER:</strong> Argentina, France, Brazil, England, Iran, Belgium</li>
+                    <li><strong>CRICKET:</strong> India, Australia, England, Pakistan</li>
+                </ul>
+            </div>
+        </section>
+        <section class="lg:col-span-2 flex flex-col gap-6">
+            <div id="resultViewport" class="bg-[#121826] border border-slate-800 rounded-xl p-6 relative flex flex-col justify-between min-h-[300px] shadow-xl">
+                <div id="placeholderState" class="absolute inset-0 flex flex-col items-center justify-center text-center p-8 z-10">
+                    <div class="w-12 h-12 rounded-full bg-slate-900 border border-slate-800 flex items-center justify-center text-xl mb-3 text-slate-500">📈</div>
+                    <h3 class="text-sm font-bold uppercase tracking-wider text-slate-300">Terminal Awaiting Directives</h3>
+                    <p class="text-xs text-slate-500 mt-1 max-w-xs">Enter structural variants above to compute local tensors.</p>
+                </div>
+                <div id="loadingState" class="absolute inset-0 bg-[#121826]/90 backdrop-blur-sm hidden flex-col items-center justify-center text-center p-8 z-20">
+                    <div class="w-8 h-8 border-2 border-blue-500/20 border-t-blue-500 rounded-full animate-spin mb-4"></div>
+                    <h3 class="text-xs font-bold uppercase text-blue-400 tracking-wider animate-pulse">Running Monte Carlo Pipeline</h3>
+                </div>
+                <div id="activeState" class="hidden opacity-0 flex flex-col justify-between w-full h-full transition-opacity duration-300 space-y-6">
+                    <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                        <span id="resMetaSport" class="text-[10px] bg-slate-900 border border-slate-800 px-2.5 py-1 rounded text-slate-400 tracking-widest font-bold uppercase mono">SIMULATION COMPLETE</span>
+                    </div>
+                    <div class="grid grid-cols-7 items-center gap-4 py-4">
+                        <div class="col-span-3 text-left">
+                            <p class="text-[10px] font-bold text-blue-400 uppercase tracking-widest mb-1">TEAM A</p>
+                            <h3 id="resNameA" class="text-base font-bold text-white truncate">-</h3>
+                            <div class="mt-2 text-xl font-bold text-white mono" id="resPtsA">0.0</div>
+                        </div>
+                        <div class="col-span-1 flex flex-col items-center justify-center">
+                            <div class="w-12 h-12 rounded-full border-2 border-blue-500 flex items-center justify-center text-[11px] font-bold text-white mono" id="resGaugePct">50%</div>
+                        </div>
+                        <div class="col-span-3 text-right">
+                            <p class="text-[10px] font-bold text-amber-500 uppercase tracking-widest mb-1">TEAM B</p>
+                            <h3 id="resNameB" class="text-base font-bold text-white truncate">-</h3>
+                            <div class="mt-2 text-xl font-bold text-white mono" id="resPtsB">0.0</div>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-3 gap-4 border-t border-slate-800 pt-4 text-center">
+                        <div><p class="text-[9px] uppercase tracking-widest text-slate-500 mb-1">Combined Total</p><p id="resTotal" class="text-sm font-bold text-slate-200 mono">0.0</p></div>
+                        <div><p class="text-[9px] uppercase tracking-widest text-blue-400 mb-1">Prob A</p><p id="resProbA" class="text-sm font-bold text-blue-400 mono">50%</p></div>
+                        <div><p class="text-[9px] uppercase tracking-widest text-amber-500 mb-1">Prob B</p><p id="resProbB" class="text-sm font-bold text-amber-500 mono">50%</p></div>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-[#121826] border border-slate-800 rounded-xl p-6 shadow-xl">
+                <h2 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">Recent Simulation History Logs</h2>
+                <div class="overflow-x-auto"><table class="w-full text-left text-xs"><tbody id="historyLogContainer" class="divide-y divide-slate-800 text-slate-300"></tbody></table></div>
+            </div>
+        </section>
+    </main>
+    <script>
+        const TEAMS = {
+            "NBA": {"Los Angeles Lakers": 114.2, "Boston Celtics": 120.6, "Golden State Warriors": 116.4, "Miami Heat": 110.1},
+            "NFL": {"Kansas City Chiefs": 24.8, "San Francisco 49ers": 26.1, "Philadelphia Eagles": 23.9, "Buffalo Bills": 25.4},
+            "MLB": {"New York Yankees": 4.8, "Los Angeles Dodgers": 5.2, "Houston Astros": 4.6, "Atlanta Braves": 4.9},
